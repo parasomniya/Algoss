@@ -1,100 +1,126 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define buf 65536
+
 typedef struct Node{
-    int v;
-    struct Node* next;
+    int num;
+    int s;
 }Node;
 
-Node* createNode(int v, Node* next){
-    Node* New = (Node*)malloc(sizeof(Node));
-    New->v = v;
-    New->next = next;
-    return New;
+char in[buf];
+int inPos = 0;
+int inLen = 0;
+
+char out[buf];
+int outPos = 0;
+
+int getCharFast(){
+    if (inPos >= inLen){
+        inLen = fread(in, 1, buf, stdin);
+        inPos = 0;
+
+        if (inLen == 0)
+            return EOF;
+    }
+
+    return in[inPos++];
 }
 
-void insert(int* heap, int* size, int value){
-    (*size)++;
-    heap[*size] = value;
+int getInt(){
+    int c = getCharFast();
+    int x = 0;
 
-    int i = *size;
-    while(i > 1 && heap[i] < heap[i / 2]){
-        int t = heap[i];
-        heap[i] = heap[i / 2];
-        heap[i / 2] = t;
-        i /= 2;
+    while (c <= ' ' && c != EOF)
+        c = getCharFast();
+
+    while (c > ' ' && c != EOF){
+        x = x * 10 + c - '0';
+        c = getCharFast();
+    }
+
+    return x;
+}
+
+void flush(){
+    if (outPos > 0){
+        fwrite(out, 1, outPos, stdout);
+        outPos = 0;
     }
 }
 
-int getMin(int* heap, int* size){
-    int res = heap[1];
-    int x = heap[*size];
-    (*size)--;
+void putCharFast(char c){
+    if (outPos == buf)
+        flush();
 
-    int i = 1;
-    while(i * 2 <= *size){
-        int j = i * 2;
-        if(j + 1 <= *size && heap[j + 1] < heap[j])
-            j++;
+    out[outPos++] = c;
+}
 
-        if(heap[j] >= x)
-            break;
+void putInt(int x){
+    char s[20];
+    int cnt = 0;
 
-        heap[i] = heap[j];
-        i = j;
+    if (x == 0){
+        putCharFast('0');
+        return;
     }
 
-    heap[i] = x;
-    return res;
+    if (x < 0){
+        putCharFast('-');
+        x = -x;
+    }
+
+    while (x > 0){
+        s[cnt++] = x % 10 + '0';
+        x /= 10;
+    }
+
+    while (cnt > 0)
+        putCharFast(s[--cnt]);
 }
 
 int main(){
-    int n, m;
-    scanf("%d%d", &n, &m);
+    int n = getInt();
 
-    Node** a = (Node**)calloc(n + 1, sizeof(Node*));
-    int* in = (int*)calloc(n + 1, sizeof(int));
-    int* ans = (int*)malloc((n + 1) * sizeof(int));
-    int* heap = (int*)malloc((n + 1) * sizeof(int));
+    Node* a = (Node*)malloc((n + 1) * sizeof(Node));
+    int* ans = (int*)calloc(n + 1, sizeof(int));
+    int* st = (int*)malloc((n + 1) * sizeof(int));
 
-    int size = 0;
-    int cnt = 0;
+    for (int i = 1; i <= n; i++){
+        int p = getInt();
+        int s = getInt();
 
-    for(int i = 0; i < m; i++){
-        int b, c;
-        scanf("%d%d", &b, &c);
-        a[b] = createNode(c, a[b]);
-        in[c]++;
+        a[p].num = i;
+        a[p].s = s;
     }
 
-    for(int i = 1; i <= n; i++){
-        if(in[i] == 0)
-            insert(heap, &size, i);
-    }
+    int top = 0;
 
-    while(size > 0){
-        int x = getMin(heap, &size);
-        ans[cnt++] = x;
+    for (int i = 1; i <= n; i++){
+        int last = 0;
 
-        Node* p = a[x];
-        while(p != NULL){
-            in[p->v]--;
-            if(in[p->v] == 0)
-                insert(heap, &size, p->v);
-            p = p->next;
+        while (top > 0 && a[st[top]].s > a[i].s){
+            last = st[top];
+            top--;
         }
+
+        if (top > 0)
+            ans[a[i].num] = -a[st[top]].num;
+
+        if (last != 0)
+            ans[a[last].num] = a[i].num;
+
+        top++;
+        st[top] = i;
     }
 
-    if(cnt != n){
-        printf("bad course");
-        return 0;
+    for (int i = 1; i <= n; i++){
+        if (i > 1)
+            putCharFast(' ');
+
+        putInt(ans[i]);
     }
 
-    for(int i = 0; i < cnt; i++){
-        if(i > 0)
-            printf(" ");
-        printf("%d", ans[i]);
-    }
-
+    flush();
     return 0;
 }
