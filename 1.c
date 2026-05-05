@@ -1,75 +1,85 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define table_size 200005
-
-//список смежности
+#define INF 10000000
 typedef struct Node{
-    int v;
+    int v; //вершина
+    int w; //weight
     struct Node* next;
 }Node;
 
-Node* a[200005]; //массив списков смежностей
-//a[i] — список всех вершин, в которые можно попасть из i
-int dist[200005]; // расстояние от 1, если -1 то недостижима
-int q[200005]; // очередь
-int tail, head;
+Node* a[105]; //массив списков
+int dist[105]; //кратчайший путь
+int used[105] = {0}; // ходили или нет
 
-//функция создания узла
-Node* createNode(int v, Node* next){
+Node* createNode(int v, int w, Node* next){
     Node* New = (Node*)malloc(sizeof(Node));
     New->v = v;
+    New->w = w;
     New->next = next;
+
     return New;
 }
 
-//BFS
-void BFS(int start){
-    dist[start] = 0;
-    q[tail++] = start; // это в main потом перенести
+void deijkstra(int s1, int N){
+    dist[s1] = 0;
 
-    while(head < tail){
-        int v = q[head++];
+    for(int i = 0; i < N; i++){
+
+        int v = -1;
+        for(int j = 1; j <= N; j++){
+            if(used[j] == 0){
+                if(v == -1)
+                    v = j;
+                else if(dist[j] < dist[v])
+                    v = j;
+            }
+        }
+
+        if(v == -1)
+            break;
+
+        if(dist[v] == INF)
+            break;
+
+        used[v] = 1;
 
         Node* p = a[v];
         while (p != NULL){
             int u = p->v;
+            int w = p->w;
 
-            if(dist[u] == -1){
-                dist[u] = dist[v] + 1;
-                q[tail++] = u;
-            }
+            if (dist[u] > dist[v] + w)
+                dist[u] = dist[v] + w;
 
-            p = p->next;
+            p = p->next; 
         }
+        
     }
+    
 }
 
 int main(){
-    int N, M;
-    int start = 1;
+    int N, s1, s2;
+    scanf("%d", &N);
+    scanf("%d %d", &s1, &s2);
 
-    head = 0;
-    tail = 0;
-
-    scanf("%d %d", &N, &M);
-    
-    for(int i = 1; i <= N; i++)
-        dist[i] = -1;
-    
-
-    for (int i = 0; i < M; i++){
-        int u, v;
-        scanf("%d %d", &u, &v);
-
-        a[u] = createNode(v, a[u]);
-        //u->v
-        //добавление вершины v в a[u]
+    for (int i = 1; i <= N; i++){
+        dist[i] = INF;
+        used[i] = 0;
     }
 
-    BFS(start);
+    int u, v, w;
+    while (scanf("%d %d %d", &u, &v, &w) == 3){
+        a[u] = createNode(v, w, a[u]);
+        a[v] = createNode(u, w, a[v]);
+    }
 
-    for (int i = 1; i <= N; i++)
-        printf("%d\n", dist[i]);
-    
+    deijkstra(s1, N);
+
+    if (dist[s2] == INF)
+        printf("no");
+    else
+        printf("%d", dist[s2]);
+
     return 0;
 }

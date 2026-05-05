@@ -1,90 +1,105 @@
 #include <stdio.h>
-#include <stdlib.h>
-#define table_size 105
-#define q_size 10005
 
-char a[table_size][table_size]; //массив символов
-int dist[table_size][table_size]; //массив расстояний
+#define sz 305
+#define INF 4000000000000000000
 
-int qx[q_size];
-int qy[q_size];
+unsigned long long a[sz][sz];
+int nxt[sz][sz];
 
-int head, tail;
+void init(){
+    for(int i = 0; i < sz; i++){
+        for(int j = 0; j < sz; j++){
+            if(i == j){
+                a[i][j] = 0;
+                nxt[i][j] = i;
+            }
+            else{
+                a[i][j] = INF;
+                nxt[i][j] = -1;
+            }
+        }
+    }
+}
 
-typedef struct coord{
-    int x;
-    int y;
-}coord;
+void add(int u, int v, int w){
+    if((unsigned long long)w < a[u][v]){
+        a[u][v] = (unsigned long long)w;
+        a[v][u] = (unsigned long long)w;
+        nxt[u][v] = v;
+        nxt[v][u] = u;
+    }
+}
 
-void BFS(coord start, int m, int n){
-    int dx[4] = {-1, 1, 0, 0};
-    int dy[4] = {0, 0, -1, 1};
-
-    dist[start.x][start.y] = 0;
-    qx[tail] = start.x;
-    qy[tail] = start.y;
-    tail++;
-
-    while(head < tail){
-        coord v;
-        v.x = qx[head];
-        v.y = qy[head];
-        head++;
-
-        for (int i = 0; i < 4; i++){
-            int nx = v.x + dx[i];
-            int ny = v.y + dy[i];
-
-            if (nx < 0 || nx >= m || ny < 0 || ny >= n)
+void f(int n){
+    for(int k = 1; k <= n; k++){
+        for(int i = 1; i <= n; i++){
+            if(a[i][k] == INF)
                 continue;
 
-            if (a[nx][ny] == 'X')
-                continue;
+            for(int j = 1; j <= n; j++){
+                if(a[k][j] == INF)
+                    continue;
 
-            if (dist[nx][ny] == -1){
-                dist[nx][ny] = dist[v.x][v.y] + 1;
-                qx[tail] = nx;
-                qy[tail] = ny;
-                tail++;
+                if(a[i][k] + a[k][j] < a[i][j]){
+                    a[i][j] = a[i][k] + a[k][j];
+                    nxt[i][j] = nxt[i][k];
+                }
             }
         }
     }
 }
 
 int main(){
-    int m, n;
-    coord start, finish;
-    start.x = start.y = 0;
-    finish.x = finish.y = 0;
+    int n, m, p, k;
+    scanf("%d%d%d%d", &n, &m, &p, &k);
 
-    scanf("%d%d", &m, &n);
+    init();
 
-    for (int i = 0; i < m; i++){
-        scanf("%s", a[i]);
+    for(int i = 0; i < m; i++){
+        int u, v, w;
+        scanf("%d%d%d", &u, &v, &w);
+        add(u, v, w);
     }
 
-    for (int i = 0; i < m; i++){
-        for (int j = 0; j < n; j++){
-            dist[i][j] = -1;
+    f(n);
 
-            if (a[i][j] == 'S'){
-                start.x = i;
-                start.y = j;
-            }
+    for(int i = 0; i < p; i++){
+        int s, t;
+        scanf("%d%d", &s, &t);
 
-            if (a[i][j] == 'F'){
-                finish.x = i;
-                finish.y = j;
-            }
+        if(nxt[s][t] == -1){
+            printf("no\n");
+            continue;
         }
+
+        int way[sz];
+        int cnt = 0;
+        int cur = s;
+        way[cnt++] = cur;
+
+        while(cur != t){
+            cur = nxt[cur][t];
+            way[cnt++] = cur;
+        }
+
+        printf("%llu %d", a[s][t], cnt);
+        for(int j = 0; j < cnt; j++)
+            printf(" %d", way[j]);
+        printf("\n");
     }
 
-    head = 0;
-    tail = 0;
+    for(int i = 0; i < k; i++){
+        int s, t;
+        scanf("%d%d", &s, &t);
 
-    BFS(start, m, n);
+        if(a[s][t] == INF)
+            printf("no");
+        else
+            printf("%llu", a[s][t]);
 
-    printf("%d", dist[finish.x][finish.y]);
+        if(i + 1 < k)
+            printf("\n");
+    }
 
     return 0;
 }
